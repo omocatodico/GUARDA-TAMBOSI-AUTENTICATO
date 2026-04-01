@@ -1,0 +1,32 @@
+{
+	email tls@tambosi.asetti.co
+}
+
+guarda.tambosi.asetti.co {
+	tls {$LEGO_CERT_FILE} {$LEGO_KEY_FILE}
+
+	root * C:\MOVIESERVER\STREAMING
+	encode zstd gzip
+
+	# Admin API — handle block takes priority; never falls through to file_server.
+	handle /api/* {
+		reverse_proxy localhost:9095 {
+			header_up Host localhost:9095
+		}
+	}
+
+	# Everything else: static files with SPA fallback and explicit content types.
+	handle {
+		@hlsm3u8 path *.m3u8
+		header @hlsm3u8 Content-Type "application/vnd.apple.mpegurl"
+
+		@hlsts path *.ts
+		header @hlsts Content-Type "video/mp2t"
+
+		@json path *.json
+		header @json Content-Type "application/json; charset=utf-8"
+
+		try_files {path} {path}/ /index.html
+		file_server
+	}
+}

@@ -1,0 +1,2 @@
+﻿CONFIG/lego/certificates/*.key
+CONFIG/lego/accounts/**/*.key

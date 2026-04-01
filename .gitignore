@@ -1,0 +1,42 @@
+# CONFIG/local.psd1  # repo privato, incluso nel tracking
+
+# ── Log ──────────────────────────────────────────────────────────────────────
+LOGS/
+APP/logs/
+APP/logs-old/
+
+# ── Directory di lavoro (dati runtime, non codice) ────────────────────────────
+TEMP/
+RIP/
+INGEST/
+WORK/queues/*.json
+
+# ── Contenuto HLS e catalogo generato (troppo grande per git) ────────────────
+STREAMING/movies/
+STREAMING/catalog.json
+
+# ── Binari ffmpeg e caddy (troppo grandi per git, da installare separatamente) ─
+TOOLS/ffmpeg/bin/*.exe
+TOOLS/caddy/bin/*.exe
+
+# ── Certificati TLS e account ACME (dati privati) ────────────────────────────
+CONFIG/lego/
+
+# ── Lego ACME client (binario, non tracciato) ────────────────────────────────
+TOOLS/lego/lego.exe
+TOOLS/lego.zip
+
+# ── Cartella duplicata di ffmpeg (stessi file di bin/) ───────────────────────
+TOOLS/ffmpeg/bin/ffmpeg-8.1-full_build/
+
+# ── Artefatti build .NET (sorgenti .cs tenuti, .exe generati esclusi) ─────────
+APP/tools/obj/
+APP/tools/bin/
+APP/*.exe
+
+# ── Windows / editor ─────────────────────────────────────────────────────────
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp
+*.log

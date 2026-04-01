@@ -1,0 +1,5 @@
+{
+	"domain": "guarda.tambosi.asetti.co",
+	"certUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/064eba8ac1d9954cc8b2bf20cc6391c618c1",
+	"certStableUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/064eba8ac1d9954cc8b2bf20cc6391c618c1"
+}

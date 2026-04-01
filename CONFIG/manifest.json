@@ -1,0 +1,32 @@
+{
+  "project": "MOVIESERVER",
+  "apps": [
+    {
+      "id": "rip-watcher",
+      "description": "Monitora lettori ottici e cartella INGEST, usa MakeMKV e prepara i source."
+    },
+    {
+      "id": "tmdb-matcher",
+      "description": "Identifica film e serie, arricchisce con metadata TMDB e produce json statici."
+    },
+    {
+      "id": "hls-encoder",
+      "description": "Esegue benchmark hardware, schedula ffmpeg e produce HLS H264/AAC multi-profilo."
+    },
+    {
+      "id": "catalog-publisher",
+      "description": "Genera frontend statico, area admin statica e indici consumati da Caddy."
+    }
+  ],
+  "naming": {
+    "movie": "Movie Title - Year",
+    "seriesEpisode": "Show Name - S01E01 - Episode Title"
+  },
+  "audioPreference": ["ita", "eng", "best"],
+  "subtitlePreference": ["ita", "eng", "all"],
+  "profiles": ["4k", "1080p", "720p", "480p"],
+  "deleteSourceAfterEncode": true,
+  "metadataLocation": "STREAMING",
+  "frontendMode": "static",
+  "caddyMode": "static-only"
+}

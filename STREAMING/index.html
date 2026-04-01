@@ -1,0 +1,485 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUARDA TAMBOSI</title>
+  <script src="hls.min.js"></script>
+  <style>
+    :root {
+      --bg: #000;
+      --surface: #0e0e0e;
+      --surface2: #161616;
+      --border: #1f1f1f;
+      --accent: #7c6dfa;
+      --accent2: #a78bfa;
+      --text: #f2f2f2;
+      --muted: #666;
+      --muted2: #444;
+      --card-r: 14px;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { color-scheme:dark; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* ── header ── */
+    header {
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      padding:16px 28px;
+      background:rgba(0,0,0,.82); backdrop-filter:blur(18px) saturate(1.6);
+      border-bottom:1px solid var(--border);
+    }
+    .header-left { display:flex; flex-direction:column; gap:2px; }
+    h1 { font-size:1.25rem; font-weight:700; letter-spacing:.5px; color:var(--text); }
+    h1 span { color:var(--accent2); }
+    .logo-icon { font-size:1.1rem; margin-right:4px; vertical-align:middle; filter:drop-shadow(0 0 6px var(--accent2)); }
+    .sub { font-size:.78rem; color:var(--muted); letter-spacing:.2px; }
+    .btn-admin {
+      font-size:.78rem; font-weight:600; letter-spacing:.4px; text-transform:uppercase;
+      border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+      padding:7px 16px; border-radius:8px; text-decoration:none;
+      transition:border-color .15s, color .15s;
+    }
+    .btn-admin:hover { border-color:var(--accent); color:var(--accent2); }
+
+    /* ── grid ── */
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+      gap:20px; padding:28px;
+    }
+
+    /* ── card ── */
+    .card {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--card-r);
+      overflow:hidden; cursor:pointer; position:relative;
+      transition:transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s, border-color .2s;
+      animation:rise .4s cubic-bezier(.22,1,.36,1) both;
+    }
+    .card:hover {
+      transform:translateY(-5px) scale(1.015);
+      box-shadow:0 20px 50px rgba(0,0,0,.7), 0 0 0 1px var(--accent);
+      border-color:var(--accent);
+    }
+    @keyframes rise { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    /* poster 2:3 */
+    .poster-wrap { position:relative; aspect-ratio:2/3; overflow:hidden; background:#111; }
+    .poster { width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s cubic-bezier(.22,1,.36,1); }
+    .card:hover .poster { transform:scale(1.04); }
+    .no-poster { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--muted2); font-size:.8rem; }
+
+    /* gradient overlay at bottom of poster */
+    .poster-fade {
+      position:absolute; bottom:0; left:0; right:0; height:55%;
+      background:linear-gradient(to top, #0e0e0e 0%, transparent 100%);
+      pointer-events:none;
+    }
+
+    /* play icon overlay on card hover */
+    .poster-play {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity .2s;
+    }
+    .card:hover .poster-play { opacity:1; }
+    .poster-play svg { width:52px; height:52px; filter:drop-shadow(0 2px 12px rgba(0,0,0,.8)); }
+
+    /* card body */
+    .card-body { padding:10px 12px 14px; }
+    .card-title { font-size:.9rem; font-weight:700; line-height:1.3; color:var(--text); margin-bottom:4px; letter-spacing:.1px; }
+    .meta { font-size:.76rem; color:var(--muted); margin-bottom:8px; }
+    .info-row { display:flex; flex-wrap:wrap; gap:5px 10px; margin-bottom:8px; }
+    .info-chip { display:flex; align-items:center; gap:3px; font-size:.72rem; color:var(--muted); }
+    .info-chip svg { flex-shrink:0; opacity:.6; }
+    .ov-wrap { margin-top:4px; }
+    .ov { font-size:.78rem; line-height:1.5; color:#aaa; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+    .ov.expanded { display:block; -webkit-line-clamp:unset; }
+    .ov-toggle { background:none; border:none; padding:3px 0 0; font-size:.72rem; color:var(--accent2); cursor:pointer; font-weight:600; display:block; margin-top:2px; }
+
+    .empty { padding:60px 28px; color:var(--muted); font-size:.95rem; }
+
+    /* ── login screen ── */
+    #login-screen {
+      position:fixed; inset:0; z-index:9999;
+      background:var(--bg);
+      display:flex; align-items:center; justify-content:center;
+      flex-direction:column;
+    }
+    #login-screen.hidden { display:none; }
+    .login-box {
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:40px 36px 36px; width:100%; max-width:360px;
+      text-align:center;
+    }
+    .login-logo { font-size:2.4rem; margin-bottom:8px; filter:drop-shadow(0 0 10px var(--accent2)); }
+    .login-title { font-size:1.3rem; font-weight:700; letter-spacing:.5px; margin-bottom:4px; }
+    .login-title span { color:var(--accent2); }
+    .login-sub { font-size:.8rem; color:var(--muted); margin-bottom:28px; }
+    .login-field {
+      display:block; width:100%; padding:11px 14px; margin-bottom:12px;
+      background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+      color:var(--text); font-size:.9rem; outline:none;
+      transition:border-color .15s;
+    }
+    .login-field:focus { border-color:var(--accent); }
+    .login-field::placeholder { color:var(--muted2); }
+    .login-btn {
+      display:block; width:100%; padding:12px; margin-top:6px;
+      background:var(--accent); border:none; border-radius:8px;
+      color:#fff; font-size:.9rem; font-weight:700; letter-spacing:.3px;
+      cursor:pointer; transition:opacity .15s;
+    }
+    .login-btn:hover { opacity:.85; }
+    .login-btn:disabled { opacity:.5; cursor:wait; }
+    .login-error {
+      margin-top:14px; padding:8px 12px; border-radius:6px;
+      background:rgba(220,50,50,.12); border:1px solid rgba(220,50,50,.3);
+      color:#e55; font-size:.8rem; display:none;
+    }
+    .login-error.show { display:block; }
+
+    /* ── header esci button ── */
+    .btn-esci {
+      font-size:.78rem; font-weight:600; letter-spacing:.4px; text-transform:uppercase;
+      border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+      padding:7px 16px; border-radius:8px; cursor:pointer;
+      transition:border-color .15s, color .15s;
+      display:none;
+    }
+    .btn-esci:hover { border-color:#c44; color:#e55; }
+    .btn-esci.show { display:inline-block; }
+    .header-user {
+      font-size:.76rem; color:var(--muted); margin-right:8px; display:none;
+    }
+    .header-user.show { display:inline; }
+    .header-right { display:flex; align-items:center; gap:8px; }
+
+    /* ── sort bar ── */
+    .sort-bar {
+      display:flex; align-items:center; gap:8px; padding:14px 28px 0; flex-wrap:wrap;
+    }
+    .sort-bar .sort-label { font-size:.76rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-right:4px; }
+    .sort-btn {
+      background:var(--surface); border:1px solid var(--border); color:var(--muted);
+      padding:5px 12px; border-radius:7px; cursor:pointer; font-size:.78rem; font-weight:600;
+      transition:border-color .15s, color .15s, background .15s;
+      display:inline-flex; align-items:center; gap:4px;
+    }
+    .sort-btn:hover { border-color:var(--accent); color:var(--accent2); }
+    .sort-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .sort-btn .arrow { font-size:.65rem; opacity:.7; }
+
+    /* ── player modal ── */
+    #player-modal { display:none; position:fixed; inset:0; z-index:1000; background:#000; flex-direction:column; }
+    #player-modal.open { display:flex; }
+    #player-box { background:#000; width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+    #player-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 18px; background:rgba(0,0,0,.9); backdrop-filter:blur(10px);
+      flex-shrink:0; border-bottom:1px solid #111;
+    }
+    #player-title { color:var(--text); font-size:.95rem; font-weight:600; letter-spacing:.2px; }
+    #player-close {
+      background:none; border:1px solid var(--border); color:var(--muted);
+      font-size:1.1rem; cursor:pointer; line-height:1; padding:4px 10px; border-radius:6px;
+      transition:border-color .15s, color .15s;
+    }
+    #player-close:hover { border-color:#555; color:var(--text); }
+    #hls-video { width:100%; flex:1; min-height:0; display:block; background:#000; object-fit:contain; }
+    #player-quality { display:none; }
+
+    /* tap overlay */
+    #tap-overlay { display:none; position:absolute; inset:0; z-index:10; background:rgba(0,0,0,.75); backdrop-filter:blur(4px); flex-direction:column; align-items:center; justify-content:center; cursor:pointer; gap:20px; }
+    #tap-overlay.show { display:flex; }
+    #tap-overlay .tap-circle {
+      width:96px; height:96px; border-radius:50%;
+      background:rgba(124,109,250,.18); border:2px solid rgba(167,139,250,.6);
+      display:flex; align-items:center; justify-content:center;
+      transition:background .2s, transform .2s;
+      box-shadow:0 0 40px rgba(124,109,250,.25);
+    }
+    #tap-overlay:hover .tap-circle { background:rgba(124,109,250,.32); transform:scale(1.07); }
+    #tap-overlay .tap-circle svg { width:38px; height:38px; fill:var(--accent2); margin-left:6px; }
+    #tap-overlay .tap-label { color:var(--text); font-size:.95rem; font-weight:600; letter-spacing:.5px; opacity:.85; }
+
+    .q-btn { background:#1a1a1a; border:1px solid var(--border); color:#ccc; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:.82rem; }
+    .q-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    @media(max-width:480px) {
+      .grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px; padding:16px; }
+      header { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <div class="login-box">
+      <div class="login-logo">&#127916;</div>
+      <div class="login-title">GUARDA <span>TAMBOSI</span></div>
+      <div class="login-sub">Accedi con le credenziali della scuola</div>
+      <form id="login-form" autocomplete="on">
+        <input class="login-field" id="login-user" type="text" placeholder="Nome utente" autocomplete="username" required>
+        <input class="login-field" id="login-pass" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button class="login-btn" type="submit" id="login-btn">Accedi</button>
+      </form>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-left"><h1><span class="logo-icon">&#127916;</span> GUARDA <span>TAMBOSI</span></h1><div class="sub" id="sub">Caricamento...</div></div>
+    <div class="header-right">
+      <span class="header-user" id="header-user"></span>
+      <a class="btn-admin" href="admin.html">Admin</a>
+      <button class="btn-esci" id="btn-esci">Esci</button>
+    </div>
+  </header>
+  <main>
+    <div class="sort-bar" id="sort-bar">
+      <span class="sort-label">Ordina:</span>
+      <button class="sort-btn active" data-sort="addedAt" data-dir="desc">Aggiunta <span class="arrow">▼</span></button>
+      <button class="sort-btn" data-sort="title" data-dir="asc">Nome</button>
+      <button class="sort-btn" data-sort="year" data-dir="asc">Uscita</button>
+      <button class="sort-btn" data-sort="runtime" data-dir="asc">Durata</button>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" style="display:none;">Nessun contenuto pubblicato.</div>
+  </main>
+  <div id="player-modal" role="dialog" aria-modal="true">
+    <div id="player-box">
+      <div id="player-header">
+        <span id="player-title"></span>
+        <button id="player-close" title="Chiudi">&times;</button>
+      </div>
+      <div id="tap-overlay" role="button" aria-label="Avvia a schermo intero">
+        <div class="tap-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
+        <span class="tap-label">Tocca per avviare</span>
+      </div>
+      <video id="hls-video" controls playsinline></video>
+      <div id="player-quality"></div>
+    </div>
+  </div>
+  <script>
+    var grid=document.getElementById('grid'),empty=document.getElementById('empty'),sub=document.getElementById('sub');
+    function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    var modal=document.getElementById('player-modal'),video=document.getElementById('hls-video'),titleEl=document.getElementById('player-title'),qualDiv=document.getElementById('player-quality');
+    var hlsInst=null;
+    var catalog=[];
+    var currentSort='addedAt', currentDir='desc';
+    var tapOverlay=document.getElementById('tap-overlay');
+    function slugify(s){return s.toLowerCase().replace(/[àáâäãå]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i').replace(/[òóôöõø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+    function tryFullscreen(){try{if(video.requestFullscreen)video.requestFullscreen();else if(video.webkitRequestFullscreen)video.webkitRequestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen();}catch(e){}}
+    function openPlayer(title,masterUrl,fromLink){
+      var _slug=slugify(title);
+      titleEl.textContent=title; qualDiv.innerHTML='';
+      if(hlsInst){hlsInst.destroy();hlsInst=null;} video.src='';
+      if(Hls.isSupported()){
+        hlsInst=new Hls({enableWorker:false});
+        hlsInst.loadSource(masterUrl); hlsInst.attachMedia(video);
+        hlsInst.on(Hls.Events.MANIFEST_PARSED,function(_,data){
+          if(!fromLink) video.play();
+          // Build quality buttons dynamically from the parsed HLS manifest
+          var autoBtn=makeQBtn('Auto',function(){hlsInst.currentLevel=-1;setActive(autoBtn);},true);
+          qualDiv.appendChild(autoBtn);
+          data.levels.forEach(function(level,idx){
+            var w=level.width,h=level.height;
+            var label=w+'x'+h;
+            var btn=makeQBtn(label,function(){hlsInst.currentLevel=idx;setActive(btn);},false);
+            qualDiv.appendChild(btn);
+          });
+        });
+      } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+        video.src=masterUrl; if(!fromLink) video.play();
+      } else { alert('Il browser non supporta HLS.'); return; }
+      modal.classList.add('open');
+      history.pushState({slug:_slug},'','/'+_slug);
+      if(fromLink){
+        tapOverlay.classList.add('show');
+      } else {
+        tapOverlay.classList.remove('show');
+        tryFullscreen();
+      }
+    }
+    tapOverlay.addEventListener('click',function(){
+      tapOverlay.classList.remove('show');
+      video.play();
+      tryFullscreen();
+    });
+    function makeQBtn(label,onClick,active){var b=document.createElement('button');b.className='q-btn'+(active?' active':'');b.textContent=label;b.addEventListener('click',onClick);return b;}
+    function setActive(el){qualDiv.querySelectorAll('.q-btn').forEach(function(b){b.classList.remove('active');});el.classList.add('active');}
+    function closePlayerUI(){modal.classList.remove('open');tapOverlay.classList.remove('show');video.pause();if(hlsInst){hlsInst.destroy();hlsInst=null;}video.src='';try{if(document.exitFullscreen&&document.fullscreenElement)document.exitFullscreen();else if(document.webkitExitFullscreen&&document.webkitFullscreenElement)document.webkitExitFullscreen();}catch(e){}}
+    function closePlayer(){closePlayerUI();history.pushState({},'','/');}  
+    document.getElementById('player-close').addEventListener('click',closePlayer);
+    modal.addEventListener('click',function(e){if(e.target===modal)closePlayer();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closePlayer();});
+    window.addEventListener('popstate',function(){var s=window.location.pathname.replace(/^\/+/,'').replace(/\/+$/,'');if(!s||s==='index.html')closePlayerUI();});
+
+    /* ── sorting ── */
+    function sortItems(items,key,dir){
+      var sorted=items.slice();
+      sorted.sort(function(a,b){
+        var va,vb;
+        if(key==='title'){va=(a.title||'').toLowerCase();vb=(b.title||'').toLowerCase();if(va<vb)return -1;if(va>vb)return 1;return 0;}
+        if(key==='year'){va=a.year||0;vb=b.year||0;return va-vb;}
+        if(key==='runtime'){va=a.runtime||0;vb=b.runtime||0;return va-vb;}
+        /* addedAt: use updatedAt string (ISO) or original array order */
+        va=a.updatedAt||a._idx||0;vb=b.updatedAt||b._idx||0;
+        if(va<vb)return -1;if(va>vb)return 1;return 0;
+      });
+      if(dir==='desc') sorted.reverse();
+      return sorted;
+    }
+    function renderGrid(items){
+      grid.innerHTML='';
+      if(!items.length){empty.style.display='block';return;}
+      empty.style.display='none';
+      function svgIcon(path,vb){return '<svg width="13" height="13" viewBox="0 0 '+vb+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+path+'</svg>';}
+      var icoDir=svgIcon('<circle cx="12" cy="8" r="5"/><path d="M20 21v-2a5 5 0 0 0-10 0v2"/>','24 24');
+      var icoTime=svgIcon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','24 24');
+      var icoRes=svgIcon('<rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/>','24 24');
+      function fmtRuntime(min){if(!min)return '';var h=Math.floor(min/60),m=min%60;return h>0?(h+'h '+(m>0?m+'m':'')):(m+'m');}
+      function fmtRes(r){if(!r)return '';var w=parseInt(r,10);if(w>=3840)return '4K';if(w>=1920)return '1080p';if(w>=1280)return '720p';if(w>=720)return '480p';return r;}
+      items.forEach(function(it){
+        var playIcon='<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="rgba(0,0,0,.45)"/><polygon points="9.5,7 18,12 9.5,17" fill="rgba(167,139,250,.95)"/></svg>';
+        var posterInner=it.posterUrl?'<img class="poster" src="'+esc(it.posterUrl)+'" alt="'+esc(it.title)+'" loading="lazy">':'<div class="no-poster">Nessuna locandina</div>';
+        var posterWrap='<div class="poster-wrap">'+posterInner+'<div class="poster-fade"></div>'+(it.hlsMaster?'<div class="poster-play">'+playIcon+'</div>':'')+'</div>';
+        var chips='';
+        if(it.director)chips+='<span class="info-chip">'+icoDir+esc(it.director)+'</span>';
+        if(it.runtime)chips+='<span class="info-chip">'+icoTime+fmtRuntime(it.runtime)+'</span>';
+        if(it.maxRes)chips+='<span class="info-chip">'+icoRes+fmtRes(it.maxRes)+'</span>';
+        var infoRow=chips?'<div class="info-row">'+chips+'</div>':'';
+        var ovText=esc(it.overview||'Nessuna descrizione disponibile.');
+        var ovHtml='<div class="ov-wrap"><div class="ov" id="ov-'+esc(it.id)+'">'+ovText+'</div><button class="ov-toggle" data-id="'+esc(it.id)+'">Leggi tutto ▾</button></div>';
+        var card=document.createElement('article');
+        card.className='card';
+        card.innerHTML=posterWrap+'<div class="card-body"><div class="card-title">'+esc(it.title)+'</div><div class="meta">'+esc(it.type)+(it.year?' &bull; '+esc(it.year):'')+'</div>'+infoRow+ovHtml+'</div>';
+        var toggle=card.querySelector('.ov-toggle');
+        toggle.addEventListener('click',function(e){e.stopPropagation();var ov=card.querySelector('.ov');var open=ov.classList.toggle('expanded');toggle.textContent=open?'Riduci ▴':'Leggi tutto ▾';});
+        if(it.hlsMaster){(function(t,m){card.addEventListener('click',function(){openPlayer(t,m);});})(it.title,it.hlsMaster);}
+        grid.appendChild(card);
+      });
+    }
+    function applySortUI(){
+      var btns=document.querySelectorAll('#sort-bar .sort-btn');
+      btns.forEach(function(b){
+        var isActive=b.getAttribute('data-sort')===currentSort;
+        b.classList.toggle('active',isActive);
+        var arrow=b.querySelector('.arrow');
+        if(arrow) arrow.textContent=currentDir==='asc'?'▲':'▼';
+        if(!isActive&&arrow) arrow.textContent='';
+      });
+      renderGrid(sortItems(catalog,currentSort,currentDir));
+    }
+    document.getElementById('sort-bar').addEventListener('click',function(e){
+      var btn=e.target.closest('.sort-btn');
+      if(!btn)return;
+      var key=btn.getAttribute('data-sort');
+      if(key===currentSort){currentDir=currentDir==='asc'?'desc':'asc';}
+      else{currentSort=key;currentDir=key==='addedAt'?'desc':'asc';}
+      applySortUI();
+    });
+
+    function main(){
+      fetch('catalog.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(data){
+        var items=Array.isArray(data.items)?data.items:[];
+        /* tag each item with original index for stable addedAt fallback */
+        items.forEach(function(it,i){it._idx=i;});
+        catalog=items;
+        sub.textContent='Aggiornato: '+(data.generatedAt||'-')+' | Titoli: '+items.length;
+        if(!items.length){empty.style.display='block';return;}
+        applySortUI();
+        var _initSlug=window.location.pathname.replace(/^\/+/,'').replace(/\/+$/,'');
+        if(_initSlug&&_initSlug!=='index.html'){var _m=catalog.filter(function(it){return slugify(it.title)===_initSlug&&it.hlsMaster;})[0];if(_m)openPlayer(_m.title,_m.hlsMaster,true);}
+      }).catch(function(){sub.textContent='Errore caricamento catalogo';empty.style.display='block';});
+    }
+
+    /* ── LDAP AUTH ── */
+    var loginScreen=document.getElementById('login-screen');
+    var loginForm=document.getElementById('login-form');
+    var loginUser=document.getElementById('login-user');
+    var loginPass=document.getElementById('login-pass');
+    var loginBtn=document.getElementById('login-btn');
+    var loginError=document.getElementById('login-error');
+    var btnEsci=document.getElementById('btn-esci');
+    var headerUser=document.getElementById('header-user');
+
+    function getToken(){
+      /* read from cookie */
+      var m=document.cookie.match(/(?:^|;\s*)ldap_session=([^;]+)/);
+      return m?m[1]:null;
+    }
+    function setToken(t){
+      /* cookie set by server Set-Cookie header, but also set from JS as fallback */
+      var d=new Date();d.setTime(d.getTime()+30*86400000);
+      document.cookie='ldap_session='+t+'; path=/; expires='+d.toUTCString()+'; SameSite=Lax';
+    }
+    function clearToken(){
+      document.cookie='ldap_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    }
+    function showApp(displayName){
+      loginScreen.classList.add('hidden');
+      if(displayName){headerUser.textContent=displayName;headerUser.classList.add('show');}
+      btnEsci.classList.add('show');
+      main();
+    }
+    function showLogin(){
+      loginScreen.classList.remove('hidden');
+      btnEsci.classList.remove('show');
+      headerUser.classList.remove('show');
+      loginError.classList.remove('show');
+      loginUser.value='';loginPass.value='';
+    }
+    function checkSession(){
+      var token=getToken();
+      if(!token){
+        /* check if LDAP is even enabled */
+        fetch('/api/ldap-status').then(function(r){return r.json();}).then(function(d){
+          if(!d.ldapEnabled){loginScreen.classList.add('hidden');main();}
+          else showLogin();
+        }).catch(function(){showLogin();});
+        return;
+      }
+      fetch('/api/session',{headers:{'Authorization':'LdapBearer '+token}}).then(function(r){return r.json();}).then(function(d){
+        if(d.valid) showApp(d.displayName);
+        else{clearToken();showLogin();}
+      }).catch(function(){
+        /* fallback: if API unreachable but we have a token, show app anyway */
+        showApp(null);
+      });
+    }
+    loginForm.addEventListener('submit',function(e){
+      e.preventDefault();
+      var u=loginUser.value.trim(),p=loginPass.value;
+      if(!u||!p)return;
+      loginBtn.disabled=true;
+      loginError.classList.remove('show');
+      fetch('/api/ldap-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+      .then(function(res){
+        loginBtn.disabled=false;
+        if(res.ok&&res.data.token){
+          setToken(res.data.token);
+          showApp(res.data.displayName);
+        }else{
+          loginError.textContent=res.data.error||'Errore di autenticazione';
+          loginError.classList.add('show');
+        }
+      }).catch(function(){
+        loginBtn.disabled=false;
+        loginError.textContent='Impossibile contattare il server';
+        loginError.classList.add('show');
+      });
+    });
+    btnEsci.addEventListener('click',function(){
+      var token=getToken();
+      clearToken();
+      if(token){fetch('/api/logout',{method:'POST',headers:{'Authorization':'LdapBearer '+token}}).catch(function(){});}
+      catalog=[];grid.innerHTML='';
+      showLogin();
+    });
+    /* boot */
+    checkSession();
+  </script>
+</body>
+</html>

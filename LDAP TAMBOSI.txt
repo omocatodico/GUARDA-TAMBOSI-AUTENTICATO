@@ -1,0 +1,81 @@
+Authentication
+LDAP
+LDAP
+Enable
+ Use LDAP to authenticate users
+
+Create users
+ Automatically create user accounts on successful login.
+
+When enabled, any valid credentials returned from an LDAP authentication attempt will automatically create a classroombookings 'Teacher' account.
+
+
+When not enabled, only users who have a classroombookings account will be authenticated.
+
+Connection
+Server
+172.21.0.10
+
+Hostname or IP address.
+
+Port
+389
+
+Standard ports are 389 (non-SSL) or 636 (SSL).
+
+Protocol version
+3
+
+Usually 3.
+
+Use TLS
+
+Ignore certificate
+
+Bind DN format
+:user@tambosi.local
+
+This will vary depending on your server and configuration. The tag :user will be replaced with the authenticating user. Some common formats are:
+
+EXAMPLE.LOCAL\:user
+:user@EXAMPLE.LOCAL
+uid=:user,cn=users,dc=example,dc=com
+Search
+Base DN
+dc=tambosi,dc=local
+
+E.g. dc=example,dc=local
+
+Search filter
+(&(sAMAccountName=:user)(|(memberof=CN=Assistenti_laboratorio,OU=Gruppi,OU=didattica,DC=tambosi,DC=local)(memberof=CN=Docenti,OU=Gruppi,OU=didattica,DC=tambosi,DC=local)))
+
+Example: (&(:attr=:user))
+
+
+The tag :user will be replaced by the user logging in.
+
+User attribute mapping
+When you use a search filter to find the authenticating user, you can populate the following classroombookings user details with attributes found in LDAP each time they log in.
+
+Combine multiple LDAP attributes by adding a colon before the attribute name, for example - :givenName :sn.
+
+Leave these fields blank to disable automatic population.
+
+First Name
+givenName
+
+E.g. givenName
+
+Last Name
+sn
+
+E.g. sn
+
+Display Name
+cn
+
+E.g. displayName or ':givenName :sn'
+
+Email address
+
+E.g. mail

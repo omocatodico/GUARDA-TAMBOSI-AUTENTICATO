@@ -1,0 +1,3 @@
+# Git LFS rimosso — i binari sono esclusi da .gitignore e scaricati
+# automaticamente da Bootstrap.psm1 al primo avvio (da GitHub releases
+# o da server personalizzato configurato in CONFIG/local.psd1).
